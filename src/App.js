@@ -9,14 +9,16 @@ function App() {
   const [notes, setNotes] = useState([])
   const [loading, setLoading] = useState(true)
 
-  const initUpload = async () => {
+  const addNote = async () => {
     try {
       setLoading(true)
       const storedNotes = localStorage.getItem('tw-notes')
       const notes = [...JSON.parse(storedNotes) || []]
-      const uri = await storage.upload(text)
+      const noteUri = await storage.upload(text)
+      const noteText = await storage.download(noteUri)
 
-      notes.push(uri)
+      notes.push(await noteText.text())
+      notes.reverse()  // reverses order of notes with the latest at the top
       localStorage.setItem('tw-notes', JSON.stringify(notes))
 
       getUploads()
@@ -24,30 +26,14 @@ function App() {
       setLoading(false)
     } catch (e) {
       alert('could not fetch notes 👀')
+      console.warn(e)
     }
   }
 
-  const getNoteText = async (noteUri) => {
-    try {
-      let note = await storage.download(noteUri)
-      return await note.text()
-    } catch (e) {
-      alert('could not fetch note text 👀')
-    }
-  }
-
-  const getUploads = async () => {
+  const getUploads = () => {
     setLoading(true)
     const storedNotes = JSON.parse(localStorage.getItem('tw-notes')) || []
-    const storedNotesCopy = []
-
-    for (let a = 0; a < storedNotes.length; a++) {
-      const element = storedNotes[a];
-      storedNotesCopy.push(await getNoteText(element))
-    }
-
-    storedNotesCopy.reverse()
-    setNotes(storedNotesCopy)
+    setNotes(storedNotes)
     setLoading(false)
   }
 
@@ -57,10 +43,10 @@ function App() {
 
   return (
     <main>
-      <h1>Notes app</h1>
+      <h1>Notes dApp</h1>
       <div className="input-wrapper">
-        <input value={text} onChange={e => setText(e.target.value)} placeholder='text' />
-        <button onClick={initUpload}>Add</button>
+        <input value={text} onChange={e => setText(e.target.value)} placeholder='Add new note...' />
+        <button onClick={addNote}>Save</button>
       </div>
       {
         !loading
